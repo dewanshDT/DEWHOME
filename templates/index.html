@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Device Control</title>
+</head>
+<body>
+    <h1>Control Devices</h1>
+    <div id="devices">
+        {% for device_id in device_ids %}
+        <div>
+            <h2>Device {{ device_id }}</h2>
+            <p>Current State: <span id="device-state-{{ device_id }}">Unknown</span></p>
+            <button onclick="controlDevice({{ device_id }}, 'high')">Turn On</button>
+            <button onclick="controlDevice({{ device_id }}, 'low')">Turn Off</button>
+        </div>
+        {% endfor %}
+    </div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
