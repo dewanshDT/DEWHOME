@@ -47,7 +47,7 @@ function controlDevice(deviceId, action) {
   })
     .then((response) => response.json())
     .then((data) => {
-      alert(data.message || data.error)
+      //   alert(data.message || data.error)
       // Update the device state on the page
       document.getElementById("device-state-" + deviceId).textContent =
         action.toUpperCase()
