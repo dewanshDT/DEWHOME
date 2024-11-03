@@ -4,16 +4,22 @@ import os
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'device_states.db')
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS devices (
-            id INTEGER PRIMARY KEY,
-            state TEXT NOT NULL
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS devices (
+                id INTEGER PRIMARY KEY,
+                state TEXT NOT NULL
+            )
+        ''')
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred while initializing the database: {e}")
+    finally:
+        if conn:
+            conn.close()
+
 
 def initialize_device_states(device_ids):
     conn = sqlite3.connect(DB_PATH)
