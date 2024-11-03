@@ -36,4 +36,4 @@ def get_device_states():
     cursor.execute('SELECT id, state FROM devices')
     devices = cursor.fetchall()
     conn.close()
-    return {str(device_id): state for device_id, state in devices}
+    return {device_id: state for device_id, state in devices}

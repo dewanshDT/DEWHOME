@@ -11,9 +11,13 @@ app = Flask(__name__)
 DEVICE_IDS = [1, 2, 3, 4]
 
 # Initialize GPIO and Database
-gpio_control.setup_pins()
-db_operations.init_db()
-db_operations.initialize_device_states(DEVICE_IDS)
+gpio_control.setup_pins()                     # Set up GPIO pins
+db_operations.init_db()                       # Initialize the database
+db_operations.initialize_device_states(DEVICE_IDS)  # Ensure all devices are in the database
+
+# Retrieve device states from the database and set GPIO pins accordingly
+device_states = db_operations.get_device_states()
+gpio_control.set_device_states(device_states)
 
 @app.route('/')
 def index():
