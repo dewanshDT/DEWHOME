@@ -2,6 +2,7 @@ import RPi.GPIO as GPIO
 
 # GPIO setup
 GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
 DEVICE_PINS = {
     1: 17,  # GPIO pin for Device 1
     2: 18,  # GPIO pin for Device 2
