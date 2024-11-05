@@ -20,9 +20,9 @@ def control_device(device_id, action):
     pin = DEVICE_PINS[device_id]
     print(action, device_id)
     if action == 'high':
-        GPIO.output(pin, GPIO.HIGH)
+        GPIO.output(pin, GPIO.LOW) # for dealing with wrong wiring
     elif action == 'low':
-        GPIO.output(pin, GPIO.LOW)
+        GPIO.output(pin, GPIO.HIGH) # for dealing with wrong wiring
     else:
         raise ValueError("Invalid action")
 
