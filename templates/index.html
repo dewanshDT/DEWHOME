@@ -5,20 +5,25 @@
     <meta charset="UTF-8">
     <title>Device Control</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Add Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
     <div class="container">
         <h1 class="main-title">Control Devices</h1>
         <div id="devices" class="device-container">
-            {% for device_id in device_ids %}
+            {% for device in devices %}
             <div class="device-card">
-                <h2 class="device-title">Device {{ device_id }}</h2>
+                <h2 class="device-title">
+                    <i class="fas {{ device.icon }}"></i>
+                    {{ device.name }}
+                </h2>
                 <p class="device-state">
-                    Current State: <span id="device-state-{{ device_id }}">Unknown</span>
+                    Current State: <span id="device-state-{{ device.id }}">Unknown</span>
                 </p>
-                <button class="btn toggle-btn" id="toggle-btn-{{ device_id }}" data-state="0"
-                    onclick="toggleDevice({{ device_id }})">Toggle</button>
+                <button class="btn toggle-btn" id="toggle-btn-{{ device.id }}" data-state="0"
+                    onclick="toggleDevice({{ device.id }})">Toggle</button>
             </div>
             {% endfor %}
         </div>

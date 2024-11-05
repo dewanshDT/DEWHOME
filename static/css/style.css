@@ -42,8 +42,8 @@
 
 .device-title {
   font-size: 1.2rem;
+  margin-right: 8px;
   color: #555;
-  margin-bottom: 0.5rem;
 }
 
 .device-state {
@@ -93,4 +93,9 @@
 
 .toggle-btn.off {
   background-color: #2ecc71;
+}
+
+.device-title i {
+  margin-right: 8px;
+  color: #555;
 }

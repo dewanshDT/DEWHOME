@@ -7,8 +7,17 @@ from modules import db_operations
 
 app = Flask(__name__)
 
-# Device IDs
-DEVICE_IDS = [1, 2, 3, 4]
+# Device list
+DEVICES = [
+    {'id': 1, 'name': 'Bulb 1', 'icon': 'fa-lightbulb'},
+    {'id': 2, 'name': 'Bulb 2', 'icon': 'fa-lightbulb'},
+    {'id': 3, 'name': 'Fan', 'icon': 'fa-fan'},
+    {'id': 4, 'name': 'Device 4', 'icon': 'fa-plug'}
+]
+
+# Extract DEVICE_IDS from DEVICES
+DEVICE_IDS = [device['id'] for device in DEVICES]
+
 
 # Initialize GPIO and Database
 gpio_control.setup_pins()                     # Set up GPIO pins
@@ -21,7 +30,7 @@ gpio_control.set_device_states(device_states)
 
 @app.route('/')
 def index():
-    return render_template('index.html', device_ids=DEVICE_IDS)
+     return render_template('index.html', devices=DEVICES)
 
 @app.route('/device', methods=['POST'])
 def control_device():
