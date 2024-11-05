@@ -80,3 +80,17 @@
 .btn-off:hover {
   background-color: #e53935;
 }
+
+/* Toggle Button Styles */
+.toggle-btn {
+  background-color: #3498db;
+  color: white;
+}
+
+.toggle-btn.on {
+  background-color: #e74c3c;
+}
+
+.toggle-btn.off {
+  background-color: #2ecc71;
+}

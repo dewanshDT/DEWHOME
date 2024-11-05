@@ -57,13 +57,77 @@ function controlDevice(deviceId, action) {
     })
 }
 
+// Function to toggle the device state
+function toggleDevice(deviceId) {
+  const button = document.getElementById("toggle-btn-" + deviceId)
+  let currentState = button.getAttribute("data-state")
+
+  // Determine the new action based on the current state
+  let newAction = currentState === "1" ? "low" : "high"
+
+  fetch("/device", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      device_id: deviceId,
+      action: newAction,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.message) {
+        // alert(data.message);
+        // Update the device state on the page
+        const newState = newAction === "high" ? "1" : "0"
+        button.setAttribute("data-state", newState)
+        document.getElementById("device-state-" + deviceId).textContent =
+          newAction.toUpperCase()
+
+        // Update the button text
+        button.textContent = newAction === "high" ? "Turn Off" : "Turn On"
+
+        // Update the button class
+        if (newAction === "high") {
+          button.classList.remove("off")
+          button.classList.add("on")
+        } else {
+          button.classList.remove("on")
+          button.classList.add("off")
+        }
+      } else {
+        alert(data.error)
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error)
+    })
+}
+
 // Fetch and display the initial device states
 fetch("/devices")
   .then((response) => response.json())
   .then((deviceStates) => {
     for (const [deviceId, state] of Object.entries(deviceStates)) {
+      // Update the state display
       document.getElementById("device-state-" + deviceId).textContent =
         state.toUpperCase()
+
+      // Update the button state and text
+      const button = document.getElementById("toggle-btn-" + deviceId)
+      const newState = state === "high" ? "1" : "0"
+      button.setAttribute("data-state", newState)
+      button.textContent = state === "high" ? "Turn Off" : "Turn On"
+
+      // Update the button class
+      if (newAction === "high") {
+        button.classList.remove("off")
+        button.classList.add("on")
+      } else {
+        button.classList.remove("on")
+        button.classList.add("off")
+      }
     }
   })
   .catch((error) => console.error("Error fetching device states:", error))
