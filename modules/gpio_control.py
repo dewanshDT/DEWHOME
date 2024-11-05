@@ -18,6 +18,7 @@ def control_device(device_id, action):
     if device_id not in DEVICE_PINS:
         raise ValueError("Invalid device ID")
     pin = DEVICE_PINS[device_id]
+    print(action, device_id)
     if action == 'high':
         GPIO.output(pin, GPIO.HIGH)
     elif action == 'low':
