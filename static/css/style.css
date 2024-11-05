@@ -100,7 +100,7 @@
   color: #555;
 }
 
-@media (max-width: 800px) {
+@media only screen and (max-width: 768px) {
   .device-container {
     height: 100%;
     display: flex;
