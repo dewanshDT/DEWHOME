@@ -99,3 +99,17 @@
   margin-right: 8px;
   color: #555;
 }
+
+@media (max-width: 800px) {
+  .device-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 1rem;
+    padding: 2rem;
+  }
+  .device-card {
+    width: 100%;
+  }
+}
