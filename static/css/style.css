@@ -1,115 +1,107 @@
-/* Basic reset */
-* {
+/* Base Styles */
+
+body {
   margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #121212; /* Dark background */
+  color: #ffffff; /* Light text */
 }
 
-/* Page container */
 .container {
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 1rem;
-  font-family: Arial, sans-serif;
-  text-align: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-/* Main title */
 .main-title {
-  font-size: 2rem;
-  color: #333;
-  margin-bottom: 1.5rem;
+  text-align: center;
+  margin-bottom: 40px;
+  font-size: 2em;
+  color: #ffffff;
 }
 
-/* Device container */
+/* Device Container */
 .device-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.5rem;
   justify-content: center;
 }
 
-/* Device card */
+/* Device Card */
 .device-card {
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
+  background-color: #1e1e1e;
+  border: 1px solid #333333;
   border-radius: 8px;
-  padding: 1rem;
-  width: 180px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  text-align: center;
+  padding: 20px;
+  margin: 10px;
+  flex: 1 1 calc(33% - 40px); /* Three cards per row */
+  box-sizing: border-box;
+  min-width: 250px;
 }
 
 .device-title {
-  font-size: 1.2rem;
-  margin-right: 8px;
-  color: #555;
-}
-
-.device-state {
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-  color: #777;
-}
-
-/* Button styles */
-.btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 5px;
-  font-size: 1rem;
-  cursor: pointer;
-  margin: 0.2rem;
-  transition: background-color 0.3s ease;
-}
-
-.btn-on {
-  background-color: #4caf50;
-  color: white;
-}
-
-.btn-on:hover {
-  background-color: #45a049;
-}
-
-.btn-off {
-  background-color: #f44336;
-  color: white;
-}
-
-.btn-off:hover {
-  background-color: #e53935;
-}
-
-/* Toggle Button Styles */
-.toggle-btn {
-  background-color: #3498db;
-  color: white;
-}
-
-.toggle-btn.on {
-  background-color: #e74c3c;
-}
-
-.toggle-btn.off {
-  background-color: #2ecc71;
+  font-size: 1.5em;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  color: #ffffff;
 }
 
 .device-title i {
-  margin-right: 8px;
-  color: #555;
+  margin-right: 10px;
+  color: #ffd700; /* Gold color for icons */
 }
 
-@media only screen and (max-width: 768px) {
-  .device-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    gap: 1rem;
-    padding: 2rem;
-  }
+.device-state {
+  font-size: 1.2em;
+  margin-bottom: 20px;
+}
+
+/* Buttons */
+.btn {
+  padding: 12px 24px;
+  font-size: 1em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  width: 100%;
+}
+
+.toggle-btn {
+  background-color: #3a3a3a;
+  color: #ffffff;
+}
+
+.toggle-btn:hover {
+  background-color: #555555;
+}
+
+/* Hover Effects */
+.device-card:hover {
+  background-color: #2a2a2a;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
   .device-card {
-    width: 100%;
+    flex: 1 1 calc(50% - 40px); /* Two cards per row */
+  }
+}
+
+@media (max-width: 600px) {
+  .device-card {
+    flex: 1 1 100%; /* One card per row */
+    margin: 10px 0;
+  }
+  .device-title {
+    font-size: 1.2em;
+  }
+  .device-state {
+    font-size: 1em;
+  }
+  .btn {
+    padding: 10px 20px;
+    font-size: 0.9em;
   }
 }
