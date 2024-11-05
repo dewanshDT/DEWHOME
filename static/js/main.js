@@ -121,12 +121,12 @@ fetch("/devices")
       button.textContent = state === "high" ? "Turn Off" : "Turn On"
 
       // Update the button class
-      if (newAction === "high") {
-        button.classList.remove("off")
+      if (state === "high") {
         button.classList.add("on")
+        button.classList.remove("off")
       } else {
-        button.classList.remove("on")
         button.classList.add("off")
+        button.classList.remove("on")
       }
     }
   })

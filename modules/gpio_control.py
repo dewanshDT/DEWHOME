@@ -5,8 +5,8 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 DEVICE_PINS = {
     1: 17,  # GPIO pin for Device 1
-    2: 18,  # GPIO pin for Device 2
-    3: 27,  # GPIO pin for Device 3
+    2: 27,  # GPIO pin for Device 2
+    3: 18,  # GPIO pin for Device 3
     4: 22   # GPIO pin for Device 4
 }
 
