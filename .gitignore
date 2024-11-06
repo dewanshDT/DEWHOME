@@ -1,2 +1,5 @@
 venv
 device_states.db
+
+*.pyc
+*.pyo
