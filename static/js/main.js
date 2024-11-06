@@ -33,30 +33,6 @@
   console.log("%cWelcome to the DEWHOME application console!", styleMessage)
 })()
 
-// Existing JavaScript Code
-function controlDevice(deviceId, action) {
-  fetch("/device", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      device_id: deviceId,
-      action: action,
-    }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      //   alert(data.message || data.error)
-      // Update the device state on the page
-      document.getElementById("device-state-" + deviceId).textContent =
-        action.toUpperCase()
-    })
-    .catch((error) => {
-      console.error("Error:", error)
-    })
-}
-
 // Function to toggle the device state
 function toggleDevice(deviceId) {
   const button = document.getElementById("toggle-btn-" + deviceId)
@@ -82,8 +58,9 @@ function toggleDevice(deviceId) {
         // Update the device state on the page
         const newState = newAction === "high" ? "1" : "0"
         button.setAttribute("data-state", newState)
-        document.getElementById("device-state-" + deviceId).textContent =
-          newAction.toUpperCase()
+        const stateLabel = document.getElementById("device-state-" + deviceId)
+        // stateLabel.textContent = newAction.toUpperCase()
+        stateLabel.className = newAction
 
         // Update the button text
         button.textContent = newAction === "high" ? "Turn Off" : "Turn On"
@@ -111,8 +88,10 @@ fetch("/devices")
   .then((deviceStates) => {
     for (const [deviceId, state] of Object.entries(deviceStates)) {
       // Update the state display
-      document.getElementById("device-state-" + deviceId).textContent =
-        state.toUpperCase()
+
+      const stateLabel = document.getElementById("device-state-" + deviceId)
+      // stateLabel.textContent = state.toUpperCase()
+      stateLabel.className = state
 
       // Update the button state and text
       const button = document.getElementById("toggle-btn-" + deviceId)

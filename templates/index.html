@@ -15,8 +15,12 @@
 </head>
 
 <body>
+    <nav>
+        <div>
+            <h1 class="main-title">DEWHOME</h1>
+        </div>
+    </nav>
     <div class="container">
-        <h1 class="main-title">DEWHOME</h1>
         <div id="devices" class="device-container">
             {% for device in devices %}
             <div class="device-card">
@@ -25,7 +29,7 @@
                     {{ device.name }}
                 </h2>
                 <p class="device-state">
-                    Current State: <span id="device-state-{{ device.id }}">Unknown</span>
+                    State: <span id="device-state-{{ device.id }}"></span>
                 </p>
                 <button class="btn toggle-btn" id="toggle-btn-{{ device.id }}" data-state="0"
                     onclick="toggleDevice({{ device.id }})">Toggle</button>

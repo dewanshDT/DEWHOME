@@ -1,30 +1,55 @@
 /* Base Styles */
 
-body {
+* {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: #121212; /* Dark background */
   color: #ffffff; /* Light text */
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  align-items: center;
+  overflow: hidden;
+}
+
+nav {
+  width: 100%;
+  border-bottom: 1px solid #333333;
+  padding: 1rem 0 1rem 0;
+  display: flex;
+  justify-content: center;
+}
+
+nav > div {
+  max-width: 1200px;
+  width: 100%;
+}
+
+nav .main-title {
+  font-size: 1em;
+  padding: 0 20px 0 20px;
+  color: #ffffff;
 }
 
 .container {
   max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
   padding: 20px;
-}
-
-.main-title {
-  text-align: center;
-  margin-bottom: 40px;
-  font-size: 2em;
-  color: #ffffff;
 }
 
 /* Device Container */
 .device-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
 }
 
 /* Device Card */
@@ -33,7 +58,6 @@ body {
   border: 1px solid #333333;
   border-radius: 8px;
   padding: 20px;
-  margin: 10px;
   flex: 1 1 calc(33% - 40px); /* Three cards per row */
   box-sizing: border-box;
   min-width: 250px;
@@ -53,8 +77,27 @@ body {
 }
 
 .device-state {
-  font-size: 1.2em;
+  font-size: 0.9em;
   margin-bottom: 20px;
+  color: #999999;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.device-state > span {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 999px;
+}
+
+.device-state .high {
+  background-color: #3eda00;
+}
+
+.device-state .low {
+  background-color: #d40000;
 }
 
 /* Buttons */
@@ -83,25 +126,16 @@ body {
 }
 
 /* Responsive Styles */
-@media (max-width: 768px) {
-  .device-card {
-    flex: 1 1 calc(50% - 40px); /* Two cards per row */
+@media (max-width: 1080px) {
+  .device-container {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 600px) {
-  .device-card {
-    flex: 1 1 100%; /* One card per row */
-    margin: 10px 0;
-  }
-  .device-title {
-    font-size: 1.2em;
-  }
-  .device-state {
-    font-size: 1em;
-  }
-  .btn {
-    padding: 10px 20px;
-    font-size: 0.9em;
+@media (max-width: 768px) {
+  .device-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 }
