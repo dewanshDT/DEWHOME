@@ -43,6 +43,8 @@ nav .main-title {
   display: flex;
   flex-direction: column;
   padding: 20px;
+  height: 100%;
+  overflow-y: auto;
 }
 
 /* Device Container */
