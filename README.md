@@ -8,17 +8,21 @@ DEWHOME is a lightweight home automation system designed to run on a Raspberry P
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Prerequisites](#prerequisites)
+  - [GPIO Access Setup](#gpio-access-setup)
   - [Installation](#installation)
     - [1. Clone the Repository](#1-clone-the-repository)
     - [2. Set Up the Virtual Environment](#2-set-up-the-virtual-environment)
     - [3. Install Dependencies](#3-install-dependencies)
     - [4. Configure the Application](#4-configure-the-application)
+    - [5. Set Database Permissions](#5-set-database-permissions)
   - [Setting Up Gunicorn](#setting-up-gunicorn)
   - [Setting Up Nginx](#setting-up-nginx)
   - [Configuring Systemd Service](#configuring-systemd-service)
   - [Running the Application](#running-the-application)
   - [Accessing the Web Interface](#accessing-the-web-interface)
   - [Project Structure](#project-structure)
+  - [Important Notes and Known Issues](#important-notes-and-known-issues)
+  - [Troubleshooting](#troubleshooting)
   - [Contributing](#contributing)
   - [License](#license)
 
@@ -37,6 +41,81 @@ DEWHOME is a lightweight home automation system designed to run on a Raspberry P
 - **Operating System**: Raspberry Pi OS Lite (or a similar Debian-based distribution).
 - **Internet Connection**: Required for installing packages and dependencies.
 - **Python**: Version 3.7 or higher installed on the Raspberry Pi.
+
+## GPIO Access Setup
+
+**Important**: Before installing DEWHOME, you need to ensure proper GPIO access permissions. This is crucial for the application to control GPIO pins.
+
+### 1. Add User to GPIO Group
+
+Add your user (typically `pi`) to the `gpio` group to grant GPIO access:
+
+```bash
+sudo usermod -a -G gpio pi
+```
+
+### 2. Create GPIO Rules (Optional but Recommended)
+
+Create a udev rule to ensure GPIO access without requiring sudo:
+
+```bash
+sudo nano /etc/udev/rules.d/99-gpio.rules
+```
+
+Add the following content:
+
+```
+SUBSYSTEM=="bcm2835-gpiomem", GROUP="gpio", MODE="0660"
+SUBSYSTEM=="gpio", GROUP="gpio", MODE="0660"
+```
+
+### 3. Enable GPIO Interface
+
+Enable the GPIO interface in Raspberry Pi configuration:
+
+```bash
+sudo raspi-config
+```
+
+Navigate to:
+
+- **Interface Options** → **GPIO** → **Yes** to enable GPIO
+
+Alternatively, you can enable it via command line:
+
+```bash
+sudo raspi-config nonint do_gpio 0
+```
+
+### 4. Reboot and Verify
+
+Reboot your Raspberry Pi to apply the changes:
+
+```bash
+sudo reboot
+```
+
+After reboot, verify GPIO access:
+
+```bash
+# Test GPIO access (should not require sudo)
+python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); print('GPIO access successful')"
+```
+
+If you see "GPIO access successful", the setup is correct. If you get a permission error, double-check the group membership and udev rules.
+
+### 5. Enable GPIO in app.py
+
+Once GPIO access is properly configured, uncomment the GPIO-related lines in `app.py`:
+
+```python
+# Uncomment these lines in app.py:
+from modules import gpio_control
+gpio_control.setup_pins()
+gpio_control.set_device_states(device_states)
+gpio_control.control_device(device_id, action)
+gpio_control.cleanup()
+```
 
 ## Installation
 
@@ -92,6 +171,17 @@ RPi.GPIO
 
 Ensure that your GPIO pins and device configurations are set up correctly.
 
+- **Enable GPIO Functionality**: Uncomment the GPIO-related lines in `app.py` to enable hardware control:
+
+```python
+# In app.py, uncomment these lines:
+from modules import gpio_control
+gpio_control.setup_pins()
+gpio_control.set_device_states(device_states)
+gpio_control.control_device(device_id, action)
+gpio_control.cleanup()
+```
+
 - **Edit `app.py`**: Verify that the `DEVICES` list matches your connected devices.
 
 ```python
@@ -108,12 +198,22 @@ DEVICES = [
 
 ```python
 # gpio_control.py snippet
-PIN_MAPPING = {
+DEVICE_PINS = {
     1: 17,  # GPIO pin connected to Device 1
     2: 27,  # GPIO pin connected to Device 2
-    3: 22,  # GPIO pin connected to Device 3
-    4: 23   # GPIO pin connected to Device 4
+    3: 18,  # GPIO pin connected to Device 3
+    4: 22   # GPIO pin connected to Device 4
 }
+```
+
+### 5. Set Database Permissions
+
+Ensure the database file has proper permissions:
+
+```bash
+# Set correct ownership and permissions for the database
+sudo chown pi:gpio /home/pi/dewhome/device_states.db
+chmod 664 /home/pi/dewhome/device_states.db
 ```
 
 ## Setting Up Gunicorn
@@ -277,6 +377,170 @@ dewhome/
 - **device_states.db**: SQLite database file storing device states.
 - **requirements.txt**: Python dependencies.
 - **README.md**: Project documentation.
+
+## Important Notes and Known Issues
+
+### GPIO Pin Mapping
+
+**Important**: The GPIO pin mapping in `gpio_control.py` uses the following pins:
+
+- Device 1: GPIO 17
+- Device 2: GPIO 27
+- Device 3: GPIO 18
+- Device 4: GPIO 22
+
+Ensure your hardware connections match these pins exactly.
+
+### User Path Configuration
+
+**Note**: This installation guide assumes the default Raspberry Pi user (`pi`) and installation path (`/home/pi/dewhome`). If you're using a different user or installation path, update the following files:
+
+1. **Nginx configuration** (`/etc/nginx/sites-available/dewhome`):
+
+   ```nginx
+   # Update these paths:
+   alias /home/YOUR_USER/dewhome/static/favicon.ico;
+   alias /home/YOUR_USER/dewhome/static/;
+   ```
+
+2. **Systemd service** (`/etc/systemd/system/dewhome.service`):
+   ```ini
+   # Update these paths:
+   User=YOUR_USER
+   WorkingDirectory=/home/YOUR_USER/dewhome
+   Environment="PATH=/home/YOUR_USER/dewhome/venv/bin"
+   ExecStart=/home/YOUR_USER/dewhome/venv/bin/gunicorn --workers 1 --bind 127.0.0.1:5000 app:app
+   ```
+
+### Database Permissions
+
+The SQLite database (`device_states.db`) is created in the project directory. Ensure proper permissions:
+
+```bash
+# Set correct ownership and permissions
+sudo chown pi:gpio /home/pi/dewhome/device_states.db
+chmod 664 /home/pi/dewhome/device_states.db
+```
+
+### GPIO Logic Note
+
+The GPIO control uses inverted logic (active-low) to handle common relay wiring issues:
+
+- `action='high'` → GPIO.LOW (device ON)
+- `action='low'` → GPIO.HIGH (device OFF)
+
+If your relays work with normal logic, you may need to modify `gpio_control.py`.
+
+## Troubleshooting
+
+### GPIO Access Issues
+
+**Problem**: Application cannot control GPIO pins or shows permission errors.
+
+**Solutions**:
+
+1. **Check GPIO group membership**:
+
+   ```bash
+   groups pi
+   ```
+
+   Ensure `gpio` is listed in the output.
+
+2. **Verify GPIO permissions**:
+
+   ```bash
+   ls -la /dev/gpiomem
+   ls -la /sys/class/gpio/
+   ```
+
+   Should show group `gpio` with read/write permissions.
+
+3. **Test GPIO access manually**:
+
+   ```bash
+   python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); GPIO.setup(17, GPIO.OUT); print('GPIO test successful')"
+   ```
+
+4. **Check if GPIO is enabled**:
+   ```bash
+   sudo raspi-config nonint get_gpio
+   ```
+   Should return `0` if enabled.
+
+### Service Issues
+
+**Problem**: DEWHOME service fails to start.
+
+**Solutions**:
+
+1. **Check service status**:
+
+   ```bash
+   sudo systemctl status dewhome.service
+   sudo journalctl -u dewhome.service -f
+   ```
+
+2. **Verify file paths**:
+
+   ```bash
+   ls -la /home/pi/dewhome/
+   ls -la /home/pi/dewhome/venv/bin/gunicorn
+   ```
+
+3. **Check permissions**:
+   ```bash
+   sudo chown -R pi:gpio /home/pi/dewhome/
+   chmod +x /home/pi/dewhome/venv/bin/gunicorn
+   ```
+
+### Web Interface Issues
+
+**Problem**: Cannot access the web interface.
+
+**Solutions**:
+
+1. **Check if services are running**:
+
+   ```bash
+   sudo systemctl status nginx
+   sudo systemctl status dewhome.service
+   ```
+
+2. **Verify port access**:
+
+   ```bash
+   netstat -tlnp | grep :80
+   netstat -tlnp | grep :5000
+   ```
+
+3. **Check firewall settings**:
+   ```bash
+   sudo ufw status
+   sudo ufw allow 80
+   ```
+
+### Hardware Issues
+
+**Problem**: Devices don't respond to GPIO control.
+
+**Solutions**:
+
+1. **Verify wiring**: Check that GPIO pins are correctly connected to relays/switches.
+2. **Test with simple script**:
+   ```bash
+   python3 -c "
+   import RPi.GPIO as GPIO
+   import time
+   GPIO.setmode(GPIO.BCM)
+   GPIO.setup(17, GPIO.OUT)
+   GPIO.output(17, GPIO.HIGH)
+   time.sleep(1)
+   GPIO.output(17, GPIO.LOW)
+   print('GPIO test completed')
+   "
+   ```
+3. **Check relay logic**: Some relays are active-low (inverted logic).
 
 ## Contributing
 
