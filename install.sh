@@ -216,8 +216,8 @@ EOF
     print_success "Created GPIO udev rules"
     
     # Enable GPIO interface
-    sudo raspi-config nonint do_gpio 0
-    print_success "GPIO interface enabled"
+    # sudo raspi-config nonint do_gpio 0  # Commented out - function not available
+    print_success "GPIO interface enabled (default on modern Raspberry Pi OS)"
     
     # Reload udev rules
     sudo udevadm control --reload-rules
