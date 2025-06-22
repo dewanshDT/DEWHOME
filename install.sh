@@ -438,6 +438,17 @@ set_final_permissions() {
     # Set file permissions
     find "$PROJECT_DIR" -type f -exec chmod 644 {} \;
     
+    # IMPORTANT: Ensure nginx can traverse to user's home directory
+    # This fixes the common issue where static files get 403 Forbidden
+    HOME_DIR=$(eval echo "~$INSTALL_USER")
+    if [ "$(stat -c %a "$HOME_DIR")" = "700" ]; then
+        print_status "Setting home directory permissions for web server access..."
+        chmod 755 "$HOME_DIR"
+        print_success "Home directory permissions updated for nginx access"
+    else
+        print_status "Home directory permissions already suitable for web server"
+    fi
+    
     # Make scripts executable
     find "$PROJECT_DIR" -name "*.sh" -exec chmod +x {} \;
     
