@@ -1,12 +1,23 @@
 # DEWHOME: Raspberry Pi Zero W Home Automation System
 
-DEWHOME is a lightweight home automation system designed to run on a Raspberry Pi Zero W. It allows you to control devices connected to the Raspberry Pi's GPIO pins through a web interface. The application uses Flask for the web server, Gunicorn as the WSGI server, and Nginx as a reverse proxy to handle client requests efficiently.
+DEWHOME is a lightweight home automation system designed to run on a Raspberry Pi Zero W. It allows you to control devices connected to the Raspberry Pi's GPIO pins through a web interface with **dynamic device management**. The application uses Flask for the web server, Gunicorn as the WSGI server, and Nginx as a reverse proxy to handle client requests efficiently.
+
+## 🚀 New Features (v2.0)
+
+- **Dynamic Device Management**: Add and remove devices through the web interface
+- **Smart GPIO Pin Selection**: Automatic pin categorization with warnings for special pins
+- **Real-time Pin Validation**: Prevents conflicts and provides usage warnings
+- **Modern Modal Interface**: Clean, responsive modals for device management
+- **Database-Driven Configuration**: All device and pin data stored in SQLite
+- **Pin Category System**: GPIO, I2C, UART, SPI pins with appropriate warnings
 
 ## Table of Contents
 
 - [DEWHOME: Raspberry Pi Zero W Home Automation System](#dewhome-raspberry-pi-zero-w-home-automation-system)
+  - [🚀 New Features (v2.0)](#-new-features-v20)
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
+  - [GPIO Pin Categories](#gpio-pin-categories)
   - [Prerequisites](#prerequisites)
   - [GPIO Access Setup](#gpio-access-setup)
   - [Installation](#installation)
@@ -20,20 +31,34 @@ DEWHOME is a lightweight home automation system designed to run on a Raspberry P
   - [Configuring Systemd Service](#configuring-systemd-service)
   - [Running the Application](#running-the-application)
   - [Accessing the Web Interface](#accessing-the-web-interface)
+  - [Using the Device Management Interface](#using-the-device-management-interface)
   - [Project Structure](#project-structure)
   - [Important Notes and Known Issues](#important-notes-and-known-issues)
   - [Troubleshooting](#troubleshooting)
+  - [API Endpoints](#api-endpoints)
   - [Contributing](#contributing)
   - [License](#license)
 
 ## Features
 
-- **Control Devices**: Turn devices on and off via a web interface.
-- **Responsive Design**: Optimized for both desktop and mobile devices.
-- **Dark Mode UI**: Modern dark theme for comfortable use in low-light conditions.
-- **Device Icons and Names**: Customize device names and icons for easy identification.
-- **Persistent States**: Device states are stored in a SQLite database.
-- **Secure and Efficient**: Uses Gunicorn and Nginx for robust performance.
+- **Dynamic Device Control**: Add, remove, and control devices through the web interface
+- **Smart Pin Management**: Automatic GPIO pin categorization and conflict prevention
+- **Responsive Design**: Optimized for both desktop and mobile devices
+- **Dark Mode UI**: Modern dark theme for comfortable use in low-light conditions
+- **Device Icons and Names**: Customize device names and icons for easy identification
+- **Persistent States**: Device states are stored in a SQLite database
+- **Real-time Validation**: Pin usage validation with warnings for special pins
+- **Secure and Efficient**: Uses Gunicorn and Nginx for robust performance
+
+## GPIO Pin Categories
+
+The system automatically categorizes all 40 GPIO pins:
+
+- **GPIO Pins** (Recommended): Standard GPIO pins safe for general use
+- **I2C Pins** (Pin 3, 5): Used for I2C communication - warns if not needed
+- **UART Pins** (Pin 8, 10): Used for serial communication - warns if console disabled
+- **SPI Pins** (Pin 19, 21, 23, 24, 26): Used for SPI communication - warns if not needed
+- **Power/Ground Pins**: Automatically excluded from device selection
 
 ## Prerequisites
 
@@ -104,19 +129,6 @@ python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); print('GPIO access 
 
 If you see "GPIO access successful", the setup is correct. If you get a permission error, double-check the group membership and udev rules.
 
-### 5. Enable GPIO in app.py
-
-Once GPIO access is properly configured, uncomment the GPIO-related lines in `app.py`:
-
-```python
-# Uncomment these lines in app.py:
-from modules import gpio_control
-gpio_control.setup_pins()
-gpio_control.set_device_states(device_states)
-gpio_control.control_device(device_id, action)
-gpio_control.cleanup()
-```
-
 ## Installation
 
 Follow these steps to set up the DEWHOME application on your Raspberry Pi Zero W.
@@ -159,52 +171,13 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-**Note**: The `requirements.txt` file should include all necessary packages, such as:
-
-```
-Flask
-gunicorn
-RPi.GPIO
-```
-
 ### 4. Configure the Application
 
-Ensure that your GPIO pins and device configurations are set up correctly.
+The application now uses dynamic device management, so no manual configuration is needed. On first run, it will:
 
-- **Enable GPIO Functionality**: Uncomment the GPIO-related lines in `app.py` to enable hardware control:
-
-```python
-# In app.py, uncomment these lines:
-from modules import gpio_control
-gpio_control.setup_pins()
-gpio_control.set_device_states(device_states)
-gpio_control.control_device(device_id, action)
-gpio_control.cleanup()
-```
-
-- **Edit `app.py`**: Verify that the `DEVICES` list matches your connected devices.
-
-```python
-# app.py snippet
-DEVICES = [
-    {'id': 1, 'name': 'Bulb 1', 'icon': 'fa-lightbulb'},
-    {'id': 2, 'name': 'Bulb 2', 'icon': 'fa-lightbulb'},
-    {'id': 3, 'name': 'Fan', 'icon': 'fa-fan'},
-    {'id': 4, 'name': 'Device 4', 'icon': 'fa-plug'}
-]
-```
-
-- **Edit `gpio_control.py`**: Ensure the GPIO pins correspond to the device IDs.
-
-```python
-# gpio_control.py snippet
-DEVICE_PINS = {
-    1: 17,  # GPIO pin connected to Device 1
-    2: 27,  # GPIO pin connected to Device 2
-    3: 18,  # GPIO pin connected to Device 3
-    4: 22   # GPIO pin connected to Device 4
-}
-```
+- Create the database with GPIO pin definitions
+- Set up one default device on the first available GPIO pin
+- Allow you to add more devices through the web interface
 
 ### 5. Set Database Permissions
 
@@ -312,13 +285,6 @@ ExecStart=/home/pi/dewhome/venv/bin/gunicorn --workers 1 --bind 127.0.0.1:5000 a
 WantedBy=multi-user.target
 ```
 
-**Explanation:**
-
-- **User and Group**: Set to `pi` and `gpio` to ensure access to GPIO pins.
-- **WorkingDirectory**: Points to the project directory.
-- **Environment**: Specifies the path to the virtual environment.
-- **ExecStart**: Command to start Gunicorn with the application.
-
 Reload systemd, enable the service, and start it:
 
 ```bash
@@ -349,89 +315,103 @@ sudo systemctl restart dewhome.service
 - Navigate to `http://[Raspberry_Pi_IP_Address]/`
 - You should see the DEWHOME interface with your devices listed.
 
+## Using the Device Management Interface
+
+### Adding New Devices
+
+1. Click the **"Add Device"** button in the top navigation
+2. Fill in the device information:
+   - **Device Name**: Choose a descriptive name (e.g., "Living Room Light")
+   - **Icon**: Select from available Font Awesome icons
+   - **GPIO Pin**: Choose from available pins with automatic validation
+3. The system will show warnings for special pins (I2C, UART, SPI)
+4. Click **"Add Device"** to create the device
+
+### Managing Existing Devices
+
+- **Toggle Devices**: Click the toggle button to turn devices on/off
+- **Delete Devices**: Click the trash icon to remove devices (with confirmation)
+- **View Pin Information**: Each device shows its GPIO pin and category
+
+### Pin Selection Guidelines
+
+- **Prefer GPIO pins** (green badge) for general devices
+- **Avoid I2C pins** (yellow badge) unless I2C is not needed
+- **Avoid UART pins** (orange badge) unless serial console is disabled
+- **Avoid SPI pins** (purple badge) unless SPI is not needed
+
 ## Project Structure
 
 ```
 dewhome/
-├── app.py
+├── app.py                 # Main Flask application with dynamic device management
 ├── modules/
-│   ├── gpio_control.py
-│   └── db_operations.py
+│   ├── gpio_control.py    # Dynamic GPIO pin management
+│   └── db_operations.py   # Database operations with GPIO pin definitions
 ├── templates/
-│   └── index.html
+│   └── index.html         # Web interface with device management modals
 ├── static/
-│   ├── css/
-│   │   └── style.css
-│   ├── js/
-│   │   └── main.js
-│   └── favicon.ico
-├── device_states.db
-├── requirements.txt
-└── README.md
+│   ├── css/style.css      # Enhanced styling with modal support
+│   ├── js/main.js         # JavaScript for device management
+│   └── favicon.ico        # App icon
+├── device_states.db       # SQLite database (auto-created)
+├── requirements.txt       # Python dependencies
+├── install.sh            # Automated installation script
+└── README.md             # This documentation
 ```
-
-- **app.py**: Main Flask application.
-- **modules/**: Contains modules for GPIO control and database operations.
-- **templates/**: HTML templates.
-- **static/**: Static files like CSS, JavaScript, and images.
-- **device_states.db**: SQLite database file storing device states.
-- **requirements.txt**: Python dependencies.
-- **README.md**: Project documentation.
 
 ## Important Notes and Known Issues
 
-### GPIO Pin Mapping
+### Database Schema
 
-**Important**: The GPIO pin mapping in `gpio_control.py` uses the following pins:
+The new version uses a relational database schema:
 
-- Device 1: GPIO 17
-- Device 2: GPIO 27
-- Device 3: GPIO 18
-- Device 4: GPIO 22
+- **gpio_pins table**: Stores all 40 GPIO pin definitions with categories
+- **devices table**: Stores user-created devices with pin assignments
+- **Foreign key relationships**: Ensures data integrity
 
-Ensure your hardware connections match these pins exactly.
+### Default Device
 
-### User Path Configuration
+- On first run, the system creates one default device on the first available GPIO pin
+- Users can delete this device and create their own custom devices
+- The system prevents creating devices without any GPIO pins available
 
-**Note**: This installation guide assumes the default Raspberry Pi user (`pi`) and installation path (`/home/pi/dewhome`). If you're using a different user or installation path, update the following files:
+### Pin Validation
 
-1. **Nginx configuration** (`/etc/nginx/sites-available/dewhome`):
-
-   ```nginx
-   # Update these paths:
-   alias /home/YOUR_USER/dewhome/static/favicon.ico;
-   alias /home/YOUR_USER/dewhome/static/;
-   ```
-
-2. **Systemd service** (`/etc/systemd/system/dewhome.service`):
-   ```ini
-   # Update these paths:
-   User=YOUR_USER
-   WorkingDirectory=/home/YOUR_USER/dewhome
-   Environment="PATH=/home/YOUR_USER/dewhome/venv/bin"
-   ExecStart=/home/YOUR_USER/dewhome/venv/bin/gunicorn --workers 1 --bind 127.0.0.1:5000 app:app
-   ```
-
-### Database Permissions
-
-The SQLite database (`device_states.db`) is created in the project directory. Ensure proper permissions:
-
-```bash
-# Set correct ownership and permissions
-sudo chown pi:gpio /home/pi/dewhome/device_states.db
-chmod 664 /home/pi/dewhome/device_states.db
-```
-
-### GPIO Logic Note
-
-The GPIO control uses inverted logic (active-low) to handle common relay wiring issues:
-
-- `action='high'` → GPIO.LOW (device ON)
-- `action='low'` → GPIO.HIGH (device OFF)
-
-If your relays work with normal logic, you may need to modify `gpio_control.py`.
+- Real-time validation prevents pin conflicts
+- Warnings are shown for special-purpose pins
+- Only pins with output capability are available for device creation
 
 ## Troubleshooting
+
+### Device Management Issues
+
+**Problem**: Cannot add new devices or pins not showing.
+
+**Solutions**:
+
+1. **Check database initialization**:
+
+   ```bash
+   # Check if database exists and has data
+   sqlite3 device_states.db "SELECT COUNT(*) FROM gpio_pins;"
+   # Should return 40
+   ```
+
+2. **Verify pin availability**:
+
+   ```bash
+   # Check available pins via API
+   curl http://localhost:5000/pins/usable
+   ```
+
+3. **Reset database** (if needed):
+   ```bash
+   # Backup existing devices first!
+   rm device_states.db
+   # Restart the application to recreate database
+   sudo systemctl restart dewhome.service
+   ```
 
 ### GPIO Access Issues
 
@@ -457,16 +437,9 @@ If your relays work with normal logic, you may need to modify `gpio_control.py`.
    Should show group `gpio` with read/write permissions.
 
 3. **Test GPIO access manually**:
-
    ```bash
    python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); GPIO.setup(17, GPIO.OUT); print('GPIO test successful')"
    ```
-
-4. **Check if GPIO is enabled**:
-   ```bash
-   sudo raspi-config nonint get_gpio
-   ```
-   Should return `0` if enabled.
 
 ### Service Issues
 
@@ -520,27 +493,38 @@ If your relays work with normal logic, you may need to modify `gpio_control.py`.
    sudo ufw allow 80
    ```
 
-### Hardware Issues
+## API Endpoints
 
-**Problem**: Devices don't respond to GPIO control.
+The application provides RESTful API endpoints:
 
-**Solutions**:
+### Device Management
 
-1. **Verify wiring**: Check that GPIO pins are correctly connected to relays/switches.
-2. **Test with simple script**:
-   ```bash
-   python3 -c "
-   import RPi.GPIO as GPIO
-   import time
-   GPIO.setmode(GPIO.BCM)
-   GPIO.setup(17, GPIO.OUT)
-   GPIO.output(17, GPIO.HIGH)
-   time.sleep(1)
-   GPIO.output(17, GPIO.LOW)
-   print('GPIO test completed')
-   "
-   ```
-3. **Check relay logic**: Some relays are active-low (inverted logic).
+- `GET /devices` - List all devices
+- `POST /devices` - Create new device
+- `DELETE /devices/<id>` - Delete device
+- `POST /device` - Control device (toggle on/off)
+
+### Pin Management
+
+- `GET /pins` - List all GPIO pins with status
+- `GET /pins/usable` - List available pins for new devices
+
+### Example API Usage
+
+```bash
+# List all devices
+curl http://localhost:5000/devices
+
+# Add new device
+curl -X POST http://localhost:5000/devices \
+  -H "Content-Type: application/json" \
+  -d '{"name": "LED Strip", "icon": "fa-lightbulb", "pin_number": 18}'
+
+# Control device
+curl -X POST http://localhost:5000/device \
+  -H "Content-Type: application/json" \
+  -d '{"device_id": 1, "action": "high"}'
+```
 
 ## Contributing
 

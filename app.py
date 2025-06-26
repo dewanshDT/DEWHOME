@@ -7,24 +7,10 @@ from modules import db_operations
 
 app = Flask(__name__)
 
-# Device list
-DEVICES = [
-    {"id": 1, "name": "Bulb 1", "icon": "fa-lightbulb"},
-    {"id": 2, "name": "Bulb 2", "icon": "fa-lightbulb"},
-    {"id": 3, "name": "Fan", "icon": "fa-fan"},
-    {"id": 4, "name": "Device 4", "icon": "fa-plug"},
-]
-
-# Extract DEVICE_IDS from DEVICES
-DEVICE_IDS = [device["id"] for device in DEVICES]
-
-
 # Initialize GPIO and Database
-gpio_control.setup_pins()  # Set up GPIO pins
 db_operations.init_db()  # Initialize the database
-db_operations.initialize_device_states(
-    DEVICE_IDS
-)  # Ensure all devices are in the database
+db_operations.create_default_device()  # Create default device if none exist
+gpio_control.setup_pins()  # Set up GPIO pins
 
 # Retrieve device states from the database and set GPIO pins accordingly
 device_states = db_operations.get_device_states()
@@ -33,7 +19,8 @@ gpio_control.set_device_states(device_states)
 
 @app.route("/")
 def index():
-    return render_template("index.html", devices=DEVICES)
+    devices = db_operations.get_all_devices()
+    return render_template("index.html", devices=devices)
 
 
 @app.route("/device", methods=["POST"])
@@ -45,9 +32,6 @@ def control_device():
     try:
         device_id = int(device_id)
     except (ValueError, TypeError):
-        return jsonify({"error": "Invalid device ID"}), 400
-
-    if device_id not in DEVICE_IDS:
         return jsonify({"error": "Invalid device ID"}), 400
 
     if action not in ["high", "low"]:
@@ -63,12 +47,67 @@ def control_device():
 
 @app.route("/devices", methods=["GET"])
 def get_device_states():
-    device_states = db_operations.get_device_states()
-    return jsonify(device_states), 200
+    devices = db_operations.get_all_devices()
+    return jsonify(devices), 200
+
+
+@app.route("/devices", methods=["POST"])
+def add_device():
+    data = request.get_json()
+    name = data.get("name")
+    icon = data.get("icon", "fa-plug")
+    pin_number = data.get("pin_number")
+
+    if not name or not pin_number:
+        return jsonify({"error": "Name and pin number are required"}), 400
+
+    try:
+        pin_number = int(pin_number)
+        device_id = db_operations.add_device(name, icon, pin_number)
+
+        # Refresh GPIO setup to include new device
+        gpio_control.setup_pins()
+
+        return (
+            jsonify(
+                {
+                    "message": f"Device '{name}' added successfully",
+                    "device_id": device_id,
+                }
+            ),
+            201,
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/devices/<int:device_id>", methods=["DELETE"])
+def delete_device(device_id):
+    try:
+        db_operations.remove_device(device_id)
+
+        # Refresh GPIO setup to remove deleted device
+        gpio_control.setup_pins()
+
+        return jsonify({"message": f"Device {device_id} deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/pins", methods=["GET"])
+def get_pins():
+    pins = db_operations.get_available_pins()
+    return jsonify(pins), 200
+
+
+@app.route("/pins/usable", methods=["GET"])
+def get_usable_pins():
+    pins = db_operations.get_usable_pins()
+    return jsonify(pins), 200
 
 
 if __name__ == "__main__":
     try:
-        app.run(host="0.0.0.0", port=5000)
+        app.run(host="0.0.0.0", port=5001, debug=True)
     finally:
         gpio_control.cleanup()

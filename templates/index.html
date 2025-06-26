@@ -20,23 +20,104 @@
             <h1 class="main-title">DEWHOME</h1>
         </div>
     </nav>
+    
     <div class="container">
         <div id="devices" class="device-container">
             {% for device in devices %}
-            <div class="device-card">
-                <h2 class="device-title">
-                    <i class="fas {{ device.icon }}"></i>
-                    {{ device.name }}
-                </h2>
-                <p class="device-state">
-                    State: <span id="device-state-{{ device.id }}"></span>
-                </p>
+            <div class="device-card" data-device-id="{{ device.id }}">
+                <div class="device-header">
+                    <h2 class="device-title">
+                        <i class="fas {{ device.icon }}"></i>
+                        {{ device.name }}
+                    </h2>
+                    <button class="btn delete-btn" onclick="deleteDevice({{ device.id }})" title="Delete Device">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="device-info">
+                    <p class="device-pin">
+                        <i class="fas fa-microchip"></i>
+                        Pin {{ device.pin_number }} ({{ device.pin_type }})
+                        <span class="pin-category pin-category-{{ device.pin_category }}">{{ device.pin_category.upper() }}</span>
+                    </p>
+                    <p class="device-state">
+                        State: <span id="device-state-{{ device.id }}"></span>
+                    </p>
+                </div>
                 <button class="btn toggle-btn" id="toggle-btn-{{ device.id }}" data-state="0"
                     onclick="toggleDevice({{ device.id }})">Toggle</button>
             </div>
             {% endfor %}
         </div>
     </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="openAddDeviceModal()" title="Add New Device">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Add Device Modal -->
+    <div id="addDeviceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus"></i> Add New Device</h2>
+                <span class="close" onclick="closeAddDeviceModal()">&times;</span>
+            </div>
+            <form id="addDeviceForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="deviceName">Device Name:</label>
+                        <input type="text" id="deviceName" name="deviceName" required placeholder="e.g., Living Room Light">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="deviceIcon">Icon:</label>
+                        <select id="deviceIcon" name="deviceIcon">
+                            <option value="fa-plug">Generic Device</option>
+                            <option value="fa-lightbulb">Light Bulb</option>
+                            <option value="fa-fan">Fan</option>
+                            <option value="fa-tv">TV/Monitor</option>
+                            <option value="fa-speaker">Speaker</option>
+                            <option value="fa-thermometer">Heater</option>
+                            <option value="fa-snowflake">Air Conditioner</option>
+                            <option value="fa-camera">Camera</option>
+                            <option value="fa-bell">Alarm/Bell</option>
+                            <option value="fa-lock">Lock</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="devicePin">GPIO Pin:</label>
+                        <select id="devicePin" name="devicePin" required>
+                            <option value="">Select a GPIO pin...</option>
+                        </select>
+                        <div class="pin-info" id="pinInfo"></div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddDeviceModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Device</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirm Action</h2>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage"></p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmButton">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
