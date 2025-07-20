@@ -16,6 +16,7 @@ NC='\033[0m' # No Color
 
 # Configuration - Auto-detect username or use provided one
 INSTALL_USER="${INSTALL_USER:-$USER}"
+INSTALL_BRANCH="${INSTALL_BRANCH:-main}"
 USER_HOME=$(eval echo "~$INSTALL_USER")
 PROJECT_DIR="$USER_HOME/dewhome"
 SERVICE_NAME="dewhome"
@@ -29,16 +30,20 @@ show_usage() {
     echo "Usage: $0 [OPTIONS]"
     echo
     echo "Options:"
-    echo "  -u, --user USERNAME    Install for specific user (default: current user)"
-    echo "  -h, --help            Show this help message"
+    echo "  -u, --user USERNAME      Install for specific user (default: current user)"
+    echo "  -b, --branch BRANCH      Install from specific git branch (default: main)"
+    echo "  -h, --help              Show this help message"
     echo
     echo "Environment Variables:"
-    echo "  INSTALL_USER          Username to install for (can be set instead of -u)"
+    echo "  INSTALL_USER            Username to install for (can be set instead of -u)"
+    echo "  INSTALL_BRANCH          Git branch to install from (can be set instead of -b)"
     echo
     echo "Examples:"
-    echo "  $0                    # Install for current user"
-    echo "  $0 -u pi              # Install for user 'pi'"
-    echo "  INSTALL_USER=pi $0    # Install for user 'pi' via environment variable"
+    echo "  $0                      # Install for current user from main branch"
+    echo "  $0 -u pi                # Install for user 'pi' from main branch"
+    echo "  $0 -b feature/actions   # Install from feature/actions branch"
+    echo "  $0 -u pi -b develop     # Install for user 'pi' from develop branch"
+    echo "  INSTALL_USER=pi INSTALL_BRANCH=feature/actions $0  # Using environment variables"
     echo
 }
 
@@ -48,6 +53,10 @@ parse_arguments() {
         case $1 in
             -u|--user)
                 INSTALL_USER="$2"
+                shift 2
+                ;;
+            -b|--branch)
+                INSTALL_BRANCH="$2"
                 shift 2
                 ;;
             -h|--help)
@@ -107,6 +116,7 @@ setup_user_config() {
     print_success "Installation configured for user: $INSTALL_USER"
     print_success "Home directory: $USER_HOME"
     print_success "Project directory: $PROJECT_DIR"
+    print_success "Git branch: $INSTALL_BRANCH"
 }
 
 # Function to check if running on Raspberry Pi
@@ -236,8 +246,16 @@ setup_project() {
     
     # Clone the repository
     if [ -n "$GITHUB_REPO" ] && git ls-remote "$GITHUB_REPO" &> /dev/null; then
-        print_status "Cloning from repository..."
-        git clone "$GITHUB_REPO" "$PROJECT_DIR" >> "$LOG_FILE" 2>&1
+        print_status "Cloning from repository (branch: $INSTALL_BRANCH)..."
+        
+        # Check if the branch exists on remote
+        if git ls-remote --heads "$GITHUB_REPO" "$INSTALL_BRANCH" | grep -q "$INSTALL_BRANCH"; then
+            git clone -b "$INSTALL_BRANCH" "$GITHUB_REPO" "$PROJECT_DIR" >> "$LOG_FILE" 2>&1
+            print_success "Successfully cloned branch '$INSTALL_BRANCH'"
+        else
+            print_warning "Branch '$INSTALL_BRANCH' not found on remote, falling back to default branch"
+            git clone "$GITHUB_REPO" "$PROJECT_DIR" >> "$LOG_FILE" 2>&1
+        fi
     else
         print_status "Creating project directory structure..."
         mkdir -p "$PROJECT_DIR"/{modules,static/{css,js},templates}
