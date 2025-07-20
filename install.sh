@@ -17,6 +17,7 @@ NC='\033[0m' # No Color
 # Configuration - Auto-detect username or use provided one
 INSTALL_USER="${INSTALL_USER:-$USER}"
 INSTALL_BRANCH="${INSTALL_BRANCH:-main}"
+SKIP_SYSTEM_UPDATE="${SKIP_SYSTEM_UPDATE:-false}"
 USER_HOME=$(eval echo "~$INSTALL_USER")
 PROJECT_DIR="$USER_HOME/dewhome"
 SERVICE_NAME="dewhome"
@@ -32,18 +33,22 @@ show_usage() {
     echo "Options:"
     echo "  -u, --user USERNAME      Install for specific user (default: current user)"
     echo "  -b, --branch BRANCH      Install from specific git branch (default: main)"
+    echo "  --skip-system-update     Skip system package update (faster installation)"
     echo "  -h, --help              Show this help message"
     echo
     echo "Environment Variables:"
     echo "  INSTALL_USER            Username to install for (can be set instead of -u)"
     echo "  INSTALL_BRANCH          Git branch to install from (can be set instead of -b)"
+    echo "  SKIP_SYSTEM_UPDATE      Skip system update if set to 'true'"
     echo
     echo "Examples:"
     echo "  $0                      # Install for current user from main branch"
     echo "  $0 -u pi                # Install for user 'pi' from main branch"
-    echo "  $0 -b feature/actions   # Install from feature/actions branch"
-    echo "  $0 -u pi -b develop     # Install for user 'pi' from develop branch"
-    echo "  INSTALL_USER=pi INSTALL_BRANCH=feature/actions $0  # Using environment variables"
+    echo "  $0 -b develop           # Install from develop branch"
+    echo "  $0 -u pi -b feature/xyz # Install for user 'pi' from feature branch"
+    echo "  $0 --skip-system-update # Install without updating system packages (faster)"
+    echo "  $0 -u pi -b develop --skip-system-update  # Fast install of specific branch"
+    echo "  INSTALL_USER=pi INSTALL_BRANCH=develop SKIP_SYSTEM_UPDATE=true $0  # Using environment variables"
     echo
 }
 
@@ -58,6 +63,10 @@ parse_arguments() {
             -b|--branch)
                 INSTALL_BRANCH="$2"
                 shift 2
+                ;;
+            --skip-system-update)
+                SKIP_SYSTEM_UPDATE=true
+                shift
                 ;;
             -h|--help)
                 show_usage
@@ -117,6 +126,7 @@ setup_user_config() {
     print_success "Home directory: $USER_HOME"
     print_success "Project directory: $PROJECT_DIR"
     print_success "Git branch: $INSTALL_BRANCH"
+    print_success "Skip system update: $SKIP_SYSTEM_UPDATE"
 }
 
 # Function to check if running on Raspberry Pi
@@ -173,6 +183,12 @@ EOF
 
 # Function to update system
 update_system() {
+    if [ "$SKIP_SYSTEM_UPDATE" = true ]; then
+        print_status "Skipping system package update as requested"
+        print_warning "System packages will not be updated - ensure your system is up to date"
+        return 0
+    fi
+    
     print_status "Updating system packages..."
     sudo apt update -y >> "$LOG_FILE" 2>&1
     sudo apt upgrade -y >> "$LOG_FILE" 2>&1

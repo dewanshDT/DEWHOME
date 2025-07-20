@@ -17,6 +17,7 @@ NC='\033[0m' # No Color
 # Configuration
 UPDATE_USER="${UPDATE_USER:-$USER}"
 UPDATE_BRANCH="${UPDATE_BRANCH:-main}"
+SKIP_SYSTEM_UPDATE="${SKIP_SYSTEM_UPDATE:-false}"
 USER_HOME=$(eval echo "~$UPDATE_USER")
 PROJECT_DIR="$USER_HOME/dewhome"
 SERVICE_NAME="dewhome"
@@ -36,18 +37,22 @@ show_usage() {
     echo "  --force                  Force update even if working directory is dirty"
     echo "  --no-backup             Skip creating backup before update"
     echo "  --no-restart             Skip restarting services after update"
+    echo "  --skip-system-update     Skip system package update (faster update)"
     echo "  -h, --help              Show this help message"
     echo
     echo "Environment Variables:"
     echo "  UPDATE_USER             Username to update for (can be set instead of -u)"
     echo "  UPDATE_BRANCH           Git branch to update to (can be set instead of -b)"
+    echo "  SKIP_SYSTEM_UPDATE      Skip system update if set to 'true'"
     echo
     echo "Examples:"
     echo "  $0                      # Update current user to main branch"
     echo "  $0 -u pi                # Update for user 'pi' to main branch"
-    echo "  $0 -b feature/actions   # Update to feature/actions branch"
-    echo "  $0 -u pi -b develop     # Update user 'pi' to develop branch"
-    echo "  UPDATE_USER=pi UPDATE_BRANCH=feature/actions $0  # Using environment variables"
+    echo "  $0 -b develop           # Update to develop branch"
+    echo "  $0 -u pi -b feature/xyz # Update user 'pi' to feature branch"
+    echo "  $0 --skip-system-update # Update without updating system packages (faster)"
+    echo "  $0 -u pi -b develop --skip-system-update  # Fast update to specific branch"
+    echo "  UPDATE_USER=pi UPDATE_BRANCH=develop SKIP_SYSTEM_UPDATE=true $0  # Using environment variables"
     echo
 }
 
@@ -77,6 +82,10 @@ parse_arguments() {
                 ;;
             --no-restart)
                 NO_RESTART=true
+                shift
+                ;;
+            --skip-system-update)
+                SKIP_SYSTEM_UPDATE=true
                 shift
                 ;;
             -h|--help)
@@ -266,6 +275,20 @@ update_repository() {
         
         return 0  # Signal changes were made
     fi
+}
+
+# Function to update system packages
+update_system_packages() {
+    if [ "$SKIP_SYSTEM_UPDATE" = true ]; then
+        print_status "Skipping system package update as requested"
+        print_warning "System packages will not be updated - ensure your system is up to date"
+        return 0
+    fi
+    
+    print_status "Updating system packages..."
+    sudo apt update -y >> "$LOG_FILE" 2>&1
+    sudo apt upgrade -y >> "$LOG_FILE" 2>&1
+    print_success "System packages updated successfully"
 }
 
 # Function to update Python dependencies
@@ -557,36 +580,39 @@ main() {
     echo
     
     # Update steps
-    print_status "Step 1/9: Setting up configuration..."
+    print_status "Step 1/10: Setting up configuration..."
     setup_user_config
     
-    print_status "Step 2/9: Checking prerequisites..."
+    print_status "Step 2/10: Checking prerequisites..."
     check_prerequisites
     
-    print_status "Step 3/9: Creating backup..."
+    print_status "Step 3/10: Creating backup..."
     backup_current
     
-    print_status "Step 4/9: Stopping services..."
+    print_status "Step 4/10: Stopping services..."
     stop_services
     
-    print_status "Step 5/9: Updating repository..."
+    print_status "Step 5/10: Updating repository..."
     if update_repository; then
         CHANGES_MADE=true
     else
         CHANGES_MADE=false
     fi
     
+    print_status "Step 6/10: Updating system packages..."
+    update_system_packages
+    
     if [ "$CHANGES_MADE" = true ]; then
-        print_status "Step 6/9: Updating dependencies..."
+        print_status "Step 7/10: Updating dependencies..."
         update_dependencies
         
-        print_status "Step 7/9: Updating database..."
+        print_status "Step 8/10: Updating database..."
         update_database
         
-        print_status "Step 8/9: Updating configuration..."
+        print_status "Step 9/10: Updating configuration..."
         update_configuration
         
-        print_status "Step 9/9: Setting permissions..."
+        print_status "Step 10/10: Setting permissions..."
         update_permissions
     else
         print_status "No code changes detected, skipping dependency/database updates"
