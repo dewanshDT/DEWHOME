@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>DEWHOME | Actions</title>
+    <!-- Viewport Meta Tag for Responsive Design -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Link to CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+
+<body>
+    <nav>
+        <div>
+            <h1 class="main-title">DEWHOME</h1>
+            <div class="nav-links">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-plug"></i>
+                    Devices
+                </a>
+                <a href="/actions" class="nav-link active">
+                    <i class="fas fa-clock"></i>
+                    Actions
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div id="actions" class="action-container">
+            {% for action in actions %}
+            <div class="action-card" data-action-id="{{ action.id }}">
+                <div class="action-header">
+                    <h2 class="action-title">
+                        <i class="fas {% if action.type == 'timer' %}fa-clock{% elif action.type == 'countdown' %}fa-hourglass{% else %}fa-sync{% endif %}"></i>
+                        {{ action.name }}
+                    </h2>
+                    <div class="action-controls">
+                        <button class="btn toggle-btn {% if action.enabled %}enabled{% else %}disabled{% endif %}" 
+                                onclick="toggleAction({{ action.id }})" 
+                                title="{% if action.enabled %}Disable{% else %}Enable{% endif %} Action">
+                            <i class="fas {% if action.enabled %}fa-pause{% else %}fa-play{% endif %}"></i>
+                        </button>
+                        <button class="btn execute-btn" onclick="executeAction({{ action.id }})" title="Execute Now">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="btn delete-btn" onclick="deleteAction({{ action.id }})" title="Delete Action">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="action-info">
+                    <div class="action-schedule">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span class="schedule-text">{{ action.schedule }}</span>
+                        <span class="action-type-badge action-type-{{ action.type }}">{{ action.type.upper() }}</span>
+                    </div>
+                    <div class="action-status">
+                        <span class="status-indicator {% if action.enabled %}enabled{% else %}disabled{% endif %}">
+                            {% if action.enabled %}ENABLED{% else %}DISABLED{% endif %}
+                        </span>
+                        {% if action.last_run %}
+                        <span class="last-run">Last: {{ action.last_run }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="action-devices">
+                        <i class="fas fa-microchip"></i>
+                        <span class="device-count">{{ action.devices|length }} device{% if action.devices|length != 1 %}s{% endif %}</span>
+                        <div class="device-list">
+                            {% for device in action.devices %}
+                            <span class="device-item">
+                                <i class="fas {{ device.device_icon }}"></i>
+                                {{ device.device_name }}
+                                <span class="device-action-type">{{ device.action_type.upper() }}</span>
+                                {% if device.delay_seconds > 0 %}
+                                <span class="device-delay">+{{ device.delay_seconds }}s</span>
+                                {% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="openAddActionModal()" title="Add New Action">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Add Action Modal -->
+    <div id="addActionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus"></i> Add New Action</h2>
+                <span class="close" onclick="closeAddActionModal()">&times;</span>
+            </div>
+            <form id="addActionForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="actionName">Action Name:</label>
+                        <input type="text" id="actionName" name="actionName" required placeholder="e.g., Morning Wake-up">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="actionType">Action Type:</label>
+                        <select id="actionType" name="actionType" onchange="updateScheduleInput()">
+                            <option value="timer">Timer (Cron Schedule)</option>
+                            <option value="countdown">Countdown (One-time)</option>
+                            <option value="interval">Interval (Recurring)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="actionSchedule">Schedule:</label>
+                        <input type="text" id="actionSchedule" name="actionSchedule" required placeholder="30 7 * * 1-5">
+                        <div class="schedule-help" id="scheduleHelp">
+                            <strong>Cron Format:</strong> minute hour day month day_of_week<br>
+                            Examples: "30 7 * * 1-5" (7:30 AM weekdays), "0 20 * * *" (8:00 PM daily)
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Device Actions:</label>
+                        <div id="deviceActions" class="device-actions-container">
+                            <!-- Device actions will be added here -->
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="addDeviceAction()">
+                            <i class="fas fa-plus"></i> Add Device
+                        </button>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddActionModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Action</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirm Action</h2>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage"></p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmButton">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/actions.js') }}"></script>
+</body>
+
+</html> 
